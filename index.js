@@ -1,6 +1,6 @@
 const A = require('async')
 const { createPromiseClient } = require('@connectrpc/connect-node')
-const { Code } = require('@bufbuild/connect')
+const { Code } = require('@connectrpc/connect')
 const { proto3, FileDescriptorSet } = require('@bufbuild/protobuf')
 const debug = require('debug')('engine:grpc')
 
