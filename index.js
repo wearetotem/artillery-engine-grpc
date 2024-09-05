@@ -1,5 +1,5 @@
 const A = require('async')
-const connect = require('@bufbuild/connect-node')
+const connect = require('@connectrpc/connect-node')
 const debug = require('debug')('engine:grpc')
 
 const { log: logger } = console
