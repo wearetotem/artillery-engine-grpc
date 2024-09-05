@@ -140,7 +140,7 @@ ArtilleryGRPCEngine.prototype.step = function step(ops, ee, scenarioSpec) {
     // call beforeRequest hooks
     Array.from(scenarioSpec.beforeRequest).forEach((functionName) => {
       const f = config.processor[functionName]
-      if (f) { f(context) }
+      if (f) { f(null, context, null, () => {}) }
     })
   }
 
