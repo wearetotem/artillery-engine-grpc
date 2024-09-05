@@ -1,5 +1,7 @@
 const A = require('async')
-const connect = require('@connectrpc/connect-node')
+const { createPromiseClient } = require('@connectrpc/connect-node')
+const { Code } = require('@bufbuild/connect')
+const { proto3, FileDescriptorSet } = require('@bufbuild/protobuf')
 const debug = require('debug')('engine:grpc')
 
 const { log: logger } = console
@@ -33,10 +35,8 @@ ArtilleryGRPCEngine.prototype.loadServiceClient = function () {
     service,
   } = protobufDefinition
 
-  const { ProtoLoader } = require('@bufbuild/protobuf')
-
-  // Load the service definition using ProtoLoader
-  const root = ProtoLoader.loadSync(filepath)
+  // Use proto3 to load the .proto file and get the service definition
+  const root = proto3.loadSync(filepath)
   const ServiceClient = root.lookupService(service)
 
   return ServiceClient
@@ -67,8 +67,8 @@ ArtilleryGRPCEngine.prototype.initGRPCClient = function (target) {
     http2: channelOpts.http2 || false, // Example: adjust according to your config
   }
 
-  // Initialize the Connect RPC client
-  const client = new connect.Client(this.serviceClient, target, options)
+  // Initialize the Connect RPC client using createPromiseClient
+  const client = createPromiseClient(this.serviceClient, target, options)
   return client
 }
 
@@ -103,10 +103,10 @@ ArtilleryGRPCEngine.prototype.step = function step(ops, ee, scenarioSpec) {
     ee.emit('counter', 'engine.grpc.responses.total', 1)
     if (error) {
       ee.emit('counter', 'engine.grpc.responses.error', 1)
-      ee.emit('counter', 'engine.grpc.codes.' + error.code, 1);
+      ee.emit('counter', 'engine.grpc.codes.' + error.code, 1)
     } else {
       ee.emit('counter', 'engine.grpc.responses.success', 1)
-      ee.emit('counter', 'engine.grpc.codes.' + connect.Code.OK, 1);
+      ee.emit('counter', 'engine.grpc.codes.' + Code.OK, 1)
     }
 
     const [diffSec, diffNanosec] = process.hrtime(startedAt)
@@ -116,7 +116,7 @@ ArtilleryGRPCEngine.prototype.step = function step(ops, ee, scenarioSpec) {
   }
 
   function beforeRequestHook(context, config, scenarioSpec) {
-    if (!scenarioSpec.beforeRequest) { return; }
+    if (!scenarioSpec.beforeRequest) { return }
 
     Array.from(scenarioSpec.beforeRequest).forEach((functionName) => {
       const f = config.processor[functionName]
@@ -139,7 +139,7 @@ ArtilleryGRPCEngine.prototype.step = function step(ops, ee, scenarioSpec) {
       const args = this.helpers.template(ops[rpcName], context)
 
       // Make a Connect RPC request
-      client.rpc(rpcName, args, { headers })
+      client[rpcName](args, { headers })
         .then(response => {
           recordMetrics(startedAt, null, response)
           callback(null, context)
